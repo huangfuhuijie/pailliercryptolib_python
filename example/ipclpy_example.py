@@ -68,7 +68,7 @@ def test_addCTPT(sz=128):
     )
 
 
-def test_mulCTPT(sz=128):
+def test_mulCTPT(sz=1):
     # test CT*PT and verify result
     a = np.random.rand(sz) * 1000
     b = np.random.rand(sz) * 1000

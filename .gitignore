@@ -31,3 +31,18 @@ __pycache__/
 
 # vim
 **.swp
+
+#line profile
+*.lprof
+
+#data files
+*.mat
+*.pth
+
+# cmake files 
+*.cmake
+*.so
+*.a
+*.so.11
+*.so.11.4
+*.so.2.0.0

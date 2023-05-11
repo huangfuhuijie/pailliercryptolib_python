@@ -22,6 +22,7 @@ import sys
 
 import numpy as np
 
+FixedPointNumberEncodeMap = {}
 
 class FixedPointNumber(object):
     """Represents a float or int fixedpoint encoding;.
@@ -55,6 +56,9 @@ class FixedPointNumber(object):
     def encode(cls, scalar, n=None, max_int=None, precision=None, max_exponent=None):
         """return an encoding of an int or float.
         """
+        if(scalar in FixedPointNumberEncodeMap.keys()):
+            return FixedPointNumberEncodeMap[scalar]
+
         # Calculate the maximum exponent for desired precision
         exponent = None
 
@@ -93,7 +97,8 @@ class FixedPointNumber(object):
                              f"basic info, scalar={scalar}, base={cls.BASE}, exponent={exponent}"
                              )
 
-        return cls(int_fixpoint % n, exponent, n, max_int)
+        FixedPointNumberEncodeMap[scalar] = cls(int_fixpoint % n, exponent, n, max_int)
+        return FixedPointNumberEncodeMap[scalar]
 
     def decode(self):
         """return decode plaintext.
@@ -108,7 +113,7 @@ class FixedPointNumber(object):
             # Negative
             mantissa = self.encoding - self.n
         else:
-            raise OverflowError(f'Overflow detected in decode number, encoding: {self.encoding}，'
+            raise OverflowError(f'Overflow detected in decode number, encoding: {self.encoding}'
                                 f'{self.exponent}'
                                 f' {self.n}')
 
