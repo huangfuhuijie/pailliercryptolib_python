@@ -19,7 +19,7 @@
 import functools
 import math
 import sys
-
+import copy
 import numpy as np
 
 FixedPointNumberEncodeMap = {}
@@ -57,7 +57,7 @@ class FixedPointNumber(object):
         """return an encoding of an int or float.
         """
         if(scalar in FixedPointNumberEncodeMap.keys()):
-            return FixedPointNumberEncodeMap[scalar]
+            return copy.deepcopy(FixedPointNumberEncodeMap[scalar])
 
         # Calculate the maximum exponent for desired precision
         exponent = None

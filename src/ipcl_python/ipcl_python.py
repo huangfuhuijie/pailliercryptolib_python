@@ -268,11 +268,12 @@ class PaillierEncryptedNumber(object):
             exponent: exponent of ciphertext
         """
 
+        # too much time wasting,commented out
         # check public key match
-        if ciphertext.public_key == public_key.pubkey:
-            pass
-        else:
-            raise ValueError("PaillierEncryptedNumber: public key mismatch")
+        # if ciphertext.public_key == public_key.pubkey:
+        #     pass
+        # else:
+        #     raise ValueError("PaillierEncryptedNumber: public key mismatch")
         self.__exponents = exponents
         self.public_key = public_key
         self.__ipclCipherText = ciphertext
@@ -530,14 +531,24 @@ class PaillierEncryptedNumber(object):
             return PaillierEncryptedNumber(
                 self.public_key, res_ct, res_expo, self.__length
             )
-    # @profile
+
     def __raw_add(
         self,
         other: Union["PaillierEncryptedNumber", int, float, np.ndarray, list],
     ) -> "PaillierEncryptedNumber":
 
         # PlainText array or list
-        if isinstance(other, np.ndarray) or isinstance(other, list):
+        if isinstance(other, PaillierEncryptedNumber):
+            if self.public_key != other.public_key:
+                raise ValueError(
+                    "PaillierEncryptedNumber.__raw_add: PublicKey mismatch"
+                )
+            if self.__length != len(other) and len(other) > 1:
+                raise ValueError(
+                    "PaillierEncryptedNumber.__raw_add: CipherText size"
+                    " mismatch with PaillierEncryptedNumber"
+                )
+        elif isinstance(other, np.ndarray) or isinstance(other, list):
             if self.__length != len(other):
                 raise ValueError(
                     "PaillierEncryptedNumber.__raw_add: array(list) size"
@@ -549,25 +560,16 @@ class PaillierEncryptedNumber(object):
             isinstance(other, int) or isinstance(other, float)
         ):
             other = self.public_key.encrypt(other, apply_obfuscator=False)
-        elif isinstance(other, PaillierEncryptedNumber):
-            if self.public_key != other.public_key:
-                raise ValueError(
-                    "PaillierEncryptedNumber.__raw_add: PublicKey mismatch"
-                )
-            if self.__length != len(other) and len(other) > 1:
-                raise ValueError(
-                    "PaillierEncryptedNumber.__raw_add: CipherText size"
-                    " mismatch with PaillierEncryptedNumber"
-                )
 
-        self_ct_aligned, other_aligned, res_expo = self.__align_exponent(
+        # remove to make it faster
+        res_ct, res_expo = self.__align_exponent(
             self.ciphertext(),
             self.exponent(),
             other.ciphertext(),
             other.exponent(),
         )
 
-        res_ct = self_ct_aligned + other_aligned
+        # res_ct = self_ct_aligned + other_aligned
         return PaillierEncryptedNumber(
             self.public_key, res_ct, res_expo, self.__length
         )
@@ -648,8 +650,7 @@ class PaillierEncryptedNumber(object):
             y_ct * y_factor_PlainText
         )
         return (
-            x_ct,
-            y_factored_CipherText_tmp,
+            x_ct+y_factored_CipherText_tmp,
             ret_exponent,
         )
 
@@ -854,7 +855,6 @@ class PaillierEncryptedNumber(object):
         return elemul.sum()
 
 BNUtilsInt2BnMap = {}
-BNUtilsBn2IntMap = {}
 class BNUtils:
     # slice first then send array
     @staticmethod
@@ -881,7 +881,7 @@ class BNUtils:
             BigNumber representation of val
         """
         if val in BNUtilsInt2BnMap.keys():
-            return BNUtilsInt2BnMap[val]
+            return copy.deepcopy(BNUtilsInt2BnMap[val])
         if val == 0:
             return ipclBigNumber.Zero
         elif val == 1:
