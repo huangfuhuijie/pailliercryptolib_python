@@ -114,7 +114,7 @@ class FixedPointNumber(object):
             mantissa = self.encoding - self.n
         else:
             raise OverflowError(f'Overflow detected in decode number, encoding: {self.encoding}'
-                                f'{self.exponent}'
+                                f' {self.exponent}'
                                 f' {self.n}')
 
         return mantissa * pow(self.BASE, -self.exponent)
