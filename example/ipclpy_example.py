@@ -210,6 +210,19 @@ def test_hybridMode(sz=64):
         " {PROJECT_ROOT}/bench/bench_ipcl_python.py"
     )
 
+def err():
+    pk, sk = PaillierKeypair.generate_keypair(2048)
+    # Acquire QAT engine control
+    context.initializeContext("QAT")
+
+    a = np.random.random()
+    ct_a = pk.encrypt(a)
+    for i in range(10000):
+        r = np.random.random()
+        ct_a = ct_a * r
+        sk.decrypt(ct_a)
+    
+    context.terminateContext()
 
 if __name__ == "__main__":
     print("====== IPCL-Python examples ======")
@@ -219,13 +232,14 @@ if __name__ == "__main__":
     # Acquire QAT engine control
     context.initializeContext("QAT")
 
-    test_encrypt_decrypt()
-    test_addCTCT()
-    test_addCTPT()
-    test_mulCTPT()
-    test_HE_ops()
-    test_serialize()
-    test_hybridMode()
+    # test_encrypt_decrypt()
+    # test_addCTCT()
+    # test_addCTPT()
+    # test_mulCTPT()
+    # test_HE_ops()
+    # test_serialize()
+    # test_hybridMode()
+    err()
 
     # Release QAT engine control
     context.terminateContext()
