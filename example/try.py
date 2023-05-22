@@ -95,7 +95,7 @@ def blockshaped(arr, nrows, ncols):
     return arr.reshape(nrows, n, ncols, m).swapaxes(1, 2)
 
 def do_dot(a,b,q):
-    res = np.dot(a, b)# less efficient because the output is stored in a temporary array?
+    res = np.dot(a, b)
     q.send(res)
 
 def pardot(a, b, nblocks, mblocks, dot_func=do_dot):
@@ -115,7 +115,7 @@ def pardot(a, b, nblocks, mblocks, dot_func=do_dot):
     parent_conns = []
     for i in range(nblocks):
         for j in range(mblocks): 
-            parent_conn, child_conn = mp.Pipe()
+            parent_conn, child_conn = mp.Pipe() #huge amount of data, if use mp.Queue will make jam and deadlock
             th = mp.Process(target=dot_func,
             args=(
                 a_blocks[i, 0, :, :],
@@ -138,9 +138,13 @@ def pardot(a, b, nblocks, mblocks, dot_func=do_dot):
     return out_blocks
 
 def quick_validation():
+    # generate Paillier scheme key pair
+    pk, sk = PaillierKeypair.generate_keypair(1024)
+    # Acquire QAT engine control
+    context.initializeContext("QAT")
     print("start")
-    haha = np.random.random((1,64,64))
-    kernel = np.random.random((96,1,5,5))
+    haha = np.random.random((96,8,8))
+    kernel = np.random.random((96,96,5,5))
     enc_haha = encrypt_matrix(haha,pk)
     res = matrix_multiplication_for_conv2d(enc_haha,kernel,0,1,2,multiProcess=(4,4))
     print("finish")
@@ -154,22 +158,33 @@ def quick_validation():
     print(np.allclose(res,res2,atol=1e-8))
     print(np.allclose(res,res2,rtol=1e-3))
 
+    context.terminateContext()
+
 def generate_result():
+    # generate Paillier scheme key pair
+    pk, sk = PaillierKeypair.generate_keypair(1024)
+    # Acquire QAT engine control
+    context.initializeContext("QAT")
+
+    # network load
     net = RED_CNN()
     net.load_state_dict(torch.load('./example/checkpoint/epoch_49_loss_0.017239.pth'))
 
-    # validate in torch
+    # data preparation
     path = './example/data_0001.mat'
-    img_data = scio.loadmat(path)['data'][:64,:64]
+    img_data = scio.loadmat(path)['data'][128:128+64,128:128+64]
     img_data = np.expand_dims(img_data, axis=0)
+    # img_data = np.random.random((1,4,4))
     ori_shape = img_data.shape
-    # img_data = np.random.random((1,64,64))
+
+    # validate in torch
     input_data = torch.FloatTensor(img_data).unsqueeze_(0)
     print("start to calc using pytorch")
     out = net(input_data).cpu().detach().numpy()
     del input_data
 
     #validate in encrypted 
+    #Estimated completion time is 1000 times the time of the first layer
     ct_img_data = encrypt_matrix(img_data,pk)
     # ct_img_data = img_data
     print("start to calc using encrypt")
@@ -181,15 +196,13 @@ def generate_result():
     print("result the same using two ways:",np.allclose(out,res,atol=1e-5))
     print("result the same using two ways:",np.allclose(out,res,rtol=1e-3))
     res.resize(ori_shape)
-    save_plts(1,2,os.path.join("./result.jpg"),res,out,gray=True)
+    # save_plts(1,2,os.path.join("./result.jpg"),res,out,gray=True)
+    scio.savemat("./result_128_128.mat", {'dec_data': res,'ori_data': img_data,'normal_data': out})
 
-if __name__ == "__main__":
-    # generate Paillier scheme key pair
-    pk, sk = PaillierKeypair.generate_keypair(200)
-    # Acquire QAT engine control
-    context.initializeContext("QAT")
-
-    quick_validation()
-    # generate_result()    
 
     context.terminateContext()
+
+if __name__ == "__main__":
+    
+    # quick_validation()
+    generate_result()
