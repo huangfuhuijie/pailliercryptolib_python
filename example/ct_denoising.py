@@ -184,7 +184,7 @@ def generate_result():
     del input_data
 
     #validate in encrypted 
-    #Estimated completion time is 1000 times the time of the first layer
+    #Estimated completion time is 900 times the time of the first layer
     ct_img_data = encrypt_matrix(img_data,pk)
     # ct_img_data = img_data
     print("start to calc using encrypt")
