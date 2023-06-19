@@ -18,6 +18,7 @@ _build/
 # Generated files
 *.log
 dist/
+*.png
 
 # Python files
 venv/
