@@ -59,3 +59,29 @@ def matrix_multiplication_for_conv2d_old(input:np.ndarray, kernel:np.ndarray,bia
         # output[oc] += bias[oc]
 
     return np.array(output)
+
+def encrypt_matrix(input,pk):
+    output = []
+    for batch in input:
+        batch_output = []
+        for data in batch:
+            items = []
+            for item in data:
+                items.append(pk.encrypt(item.astype(float)))
+            batch_output.append(items)
+        output.append(batch_output)
+    output = np.array(output)
+    return output
+
+def decrypt_matrix(input,sk):
+    output = []
+    for batch in input:
+        batch_output = []
+        for data in batch:
+            items = []
+            for item in data:
+                items.append(sk.decrypt(item))
+            batch_output.append(items)
+        output.append(batch_output)
+    output = np.array(output)
+    return output

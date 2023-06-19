@@ -41,36 +41,10 @@ def matrix_multiplication_for_conv2d(input:np.ndarray, kernel:np.ndarray,bias = 
     output_shape = (out_channel,output_h,output_w)
     input = img2col(input,kernel_h,stride)
     if multiProcess == None:
-        out = np.dot(kernel, input.T)
+        out = np.dot(kernel, input.T)+bias.reshape(-1,1)
     else:
-        out = pardot(kernel, input.T,multiProcess[0],multiProcess[1])
+        out = pardot(kernel, input.T,multiProcess[0],multiProcess[1])+bias.reshape(-1,1)
     output = np.reshape(out, output_shape) 
-    return output
-
-def encrypt_matrix(input,pk):
-    output = []
-    for batch in input:
-        batch_output = []
-        for data in batch:
-            items = []
-            for item in data:
-                items.append(pk.encrypt(item.astype(float)))
-            batch_output.append(items)
-        output.append(batch_output)
-    output = np.array(output)
-    return output
-
-def decrypt_matrix(input,sk):
-    output = []
-    for batch in input:
-        batch_output = []
-        for data in batch:
-            items = []
-            for item in data:
-                items.append(sk.decrypt(item))
-            batch_output.append(items)
-        output.append(batch_output)
-    output = np.array(output)
     return output
 
 def encrypt_conv(x,module):
@@ -79,9 +53,10 @@ def encrypt_conv(x,module):
     padding,_ = module.padding
     stride,_ = module.stride
     kernel = module.weight.cpu().detach().numpy()
-    bias = 0
+    bias = module.bias.cpu().detach().numpy()
     print(in_channels,out_channels,padding,stride,kernel.shape)
     x = matrix_multiplication_for_conv2d(x,kernel,bias,stride,padding,multiProcess=(4,4))
+    # x = matrix_multiplication_for_conv2d(x,kernel,bias,stride,padding,multiProcess=None)
     return x
 
 def blockshaped(arr, nrows, ncols):
@@ -168,13 +143,13 @@ def generate_result():
 
     # network load
     net = RED_CNN()
-    net.load_state_dict(torch.load('./example/checkpoint/epoch_49_loss_0.017239.pth'))
+    net.load_state_dict(torch.load('./example/checkpoint/epoch_99_loss_0.016964.pth'))
 
     # data preparation
-    path = './example/data_0001.mat'
+    path = './example/RED/data_0001.mat'
     img_data = scio.loadmat(path)['data'][128:128+64,128:128+64]
     img_data = np.expand_dims(img_data, axis=0)
-    # img_data = np.random.random((1,4,4))
+    img_data = np.random.random((1,4,4))
     ori_shape = img_data.shape
 
     # validate in torch
