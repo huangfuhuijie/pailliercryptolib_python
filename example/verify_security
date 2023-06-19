@@ -1,0 +1,42 @@
+
+import pickle as pkl
+import numpy as np
+from RED.REDCNN import *
+from collections import OrderedDict
+import scipy.io as scio
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from matplotlib import image as image, pyplot as plt
+from resnet import *
+# import torchvision.models as models
+import math
+import time
+import copy
+import os
+
+if __name__ == "__main__":
+    device = "cuda"
+    iter = 200
+
+    model = resnet50().to(device)
+    optimizer = optim.Adam(model.parameters(),1e-3)
+    loss_fn = nn.MSELoss()
+    # model = nn.Sequential(*list(model.children())[:-2]).to(device)
+
+    path = './example/RED/data_0001.mat'
+    img_data = scio.loadmat(path)['data']
+    img_data = np.expand_dims(img_data, axis=0)
+    input_data = torch.Tensor(img_data).unsqueeze_(0).to(device)
+
+    kernel = torch.randn(((96,1,5,5))).to(device)
+    output = F.conv2d(input_data,kernel,padding=2)
+    for i in range(iter):
+        rand_factor = torch.randn(output.shape).to(device)
+        final_output = output*rand_factor
+
+        out = model(final_output)
+        loss = loss_fn(out,input_data)
+        loss.backward()
+        optimizer.step()
