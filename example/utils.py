@@ -3,6 +3,7 @@ import builtins
 import datetime
 import numpy as np
 import math
+from skimage.metrics import peak_signal_noise_ratio, structural_similarity 
 
 old_print = builtins.print
 def hook_print():
@@ -85,3 +86,27 @@ def decrypt_matrix(input,sk):
         output.append(batch_output)
     output = np.array(output)
     return output
+
+def displaywin(img, low=0.42, high=0.62):
+    img[img<low] = low
+    img[img>high] = high
+    img = (img - low)/(high - low) * 255
+    return img
+
+def get_psnr_ssim(out, lab):
+
+    channel, _, _, _ = out.shape
+    psnr = []
+    ssim = []
+
+    # print('1')
+    for c in range(channel):
+
+        denoised = out[c, 0, :, :]
+        label = lab[c, 0, :, :]
+        psnr_temp = peak_signal_noise_ratio(label,denoised,data_range=1)
+        ssim_temp = structural_similarity(denoised,label,data_range=1)
+        psnr.append(psnr_temp)
+        ssim.append(ssim_temp)
+        # print("psnr: %f, ssim: %f" % (psnr_temp, ssim_temp))
+    return psnr,ssim

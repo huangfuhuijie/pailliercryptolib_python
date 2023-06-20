@@ -26,24 +26,30 @@ def visual():
     context.initializeContext("QAT")
     # net = RED_CNN()
     # net.load_state_dict(torch.load('./example/checkpoint/epoch_99_loss_0.008091.pth'))
-    # net = RED_CNN_last_relu()
-    # net.load_state_dict(torch.load('./example/checkpoint/best_param_last_relu.pth'))
-    net = RED_CNN_all_relu()
-    net.load_state_dict(torch.load('./example/checkpoint/best_param_all_relu.pth'))
+    net = RED_CNN_last_relu()
+    net.load_state_dict(torch.load('./example/checkpoint/best_param_last_relu_2.pth'))
+    # net = RED_CNN_all_relu()
+    # net.load_state_dict(torch.load('./example/checkpoint/best_param_all_relu.pth'))
 
     # data preparation
-    path = './example/RED/data_0036.mat'
+    path = './example/RED/data_1927.mat'
     img_data = scio.loadmat(path)['data']
     img_data = np.expand_dims(img_data, axis=0)
     # img_data = np.random.random((1,4,4))
     ori_shape = img_data.shape
+    label = cv.imread("example/RED/data_1927.jpg",0) # 255*255,[0-255]
+    label = label/255 # 255*255,[0-1]
+    label = np.expand_dims(label,0) # 1*255*255,[0-255]
+    label = np.expand_dims(label,0) # 1*1*255*255,[0-255]
 
     # validate in torch
     input_data = torch.FloatTensor(img_data).unsqueeze_(0)
     print("start to calc using pytorch")
-    out = net(input_data).cpu().detach().numpy().squeeze(0)
+    out = net(input_data).cpu().detach().numpy()
     del input_data
-
+    psnr,ssim = get_psnr_ssim(out,label)
+    print(psnr,ssim)
+    out = out.squeeze(0)
     #validate in encrypted 
     #Estimated completion time is 900 times the time of the first layer
     ct_img_data = encrypt_matrix(img_data,pk)
@@ -53,7 +59,7 @@ def visual():
     tr_ct_out_data = np.array([[[float(data2.ciphertext().getTexts()[0].__str__())for data2 in data1]for data1 in data] for data in ct_out_data])
     tr_ct_out_data = tr_ct_out_data/np.max(tr_ct_out_data)
 
-    save_plts(2,2,"all_relu.png",img_data.transpose(1,2,0),out.transpose(1,2,0),tr_ct_img_data.transpose(1,2,0),tr_ct_out_data.transpose(1,2,0),gray=True)
+    save_plts(2,3,"last_relu.png",displaywin(img_data.transpose(1,2,0)),displaywin(out.transpose(1,2,0)),label.squeeze(0).transpose(1,2,0),tr_ct_img_data.transpose(1,2,0),tr_ct_out_data.transpose(1,2,0),gray=True)
 
     
 
