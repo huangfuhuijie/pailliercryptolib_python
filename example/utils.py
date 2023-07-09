@@ -4,6 +4,7 @@ import datetime
 import numpy as np
 import math
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity 
+import torch.nn as nn
 
 old_print = builtins.print
 def hook_print():
@@ -110,3 +111,13 @@ def get_psnr_ssim(out, lab):
         ssim.append(ssim_temp)
         # print("psnr: %f, ssim: %f" % (psnr_temp, ssim_temp))
     return psnr,ssim
+
+def weight_init(m):
+    if isinstance(m, nn.Linear):
+        nn.init.xavier_normal_(m.weight)
+        nn.init.constant_(m.bias, 0.01)
+    elif isinstance(m, nn.Conv2d):
+        nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+    elif isinstance(m, nn.BatchNorm2d):
+        nn.init.constant_(m.weight, 1)
+        nn.init.constant_(m.bias, 0)

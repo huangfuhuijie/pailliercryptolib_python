@@ -39,6 +39,7 @@ __pycache__/
 #data files
 *.mat
 *.pth
+*.pt
 
 # cmake files 
 *.cmake
